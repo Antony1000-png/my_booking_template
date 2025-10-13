@@ -1,0 +1,60 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+ENV/
+.python-version
+
+# Byte-compiled / C extensions
+*.pyd
+*.dll
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Test
+.pytest_cache/
+.coverage
+htmlcov/
+coverage.xml
+
+# Database
+*.db
+*.sqlite3
+
+# Logs
+*.log
+logs/
+pgdata/
+
+
+
+# Alembic
+# Обычно версии миграций храним в git (для истории).
+# Если хочешь держать пустую папку, можно оставить .gitkeep
+#migrations/versions/*
+#!migrations/versions/.gitkeep
+
+# Environment files
+.env
+.env.local
+.env.prod
+.env.test
+.env.docker
+!.env.example
+
+# Distribution / Packaging
+dist/
+build/
+*.egg-info/
+
+# Misc
+.cursor
+.DS_Store
