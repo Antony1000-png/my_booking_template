@@ -1,4 +1,5 @@
 # src/my_booking/main.py
+# src/my_booking/main.py
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, HTTPException
@@ -15,8 +16,9 @@ async def lifespan(app: FastAPI):
     await close_db()
 
 app = FastAPI(lifespan=lifespan)
+app.include_router(rooms.router)
+app.include_router(bookings.router)
 
-# Обработчик ошибок целостности (например, нарушение внешнего ключа)
 @app.exception_handler(IntegrityError)
 async def integrity_error_handler(request, exc):
     # Проверяем, что это именно ошибка внешнего ключа
@@ -25,11 +27,8 @@ async def integrity_error_handler(request, exc):
             status_code=400,
             detail="Room does not exist"
         )
-    # Другие ошибки целостности (например, уникальность) можно обработать отдельно
+    # Другие IntegrityError можно обработать отдельно
     raise HTTPException(
         status_code=400,
         detail="Database integrity error"
     )
-
-app.include_router(rooms.router)
-app.include_router(bookings.router)
