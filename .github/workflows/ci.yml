@@ -7,6 +7,9 @@ jobs:
     runs-on: ubuntu-latest
     env:
       CI: "true"  # ← Это включит SQLite в conftest.py
+      SECRET_KEY: ${{ secrets.SECRET_KEY }}
+      JWT_SECRET_KEY: ${{ secrets.JWT_SECRET_KEY }}
+      JWT_EXPIRE_DAYS: "30"
     steps:
       - uses: actions/checkout@v4
 
