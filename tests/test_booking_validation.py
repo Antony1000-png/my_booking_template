@@ -1,11 +1,13 @@
 # tests/test_booking_validation.py
+
 import pytest
-from datetime import date
+
 
 @pytest.mark.asyncio
 async def test_end_date_before_start(client):
     # Создаём комнату для теста
-    response = await client.post("/rooms/create", json={"description": "Room validation", "price": 100})
+    response = await client.post("/rooms/create", 
+                                 json={"description": "Room validation", "price": 100})
     room_id = response.json()["room_id"]
 
     # Пробуем создать бронь с date_end < date_start

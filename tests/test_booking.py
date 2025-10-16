@@ -1,10 +1,12 @@
+
 import pytest
-from datetime import date
+
 
 @pytest.mark.asyncio
 async def test_create_booking(client):
     # создаём комнату
-    response = await client.post("/rooms/create", json={"description": "Room for booking", "price": 150})
+    response = await client.post("/rooms/create", 
+                                 json={"description": "Room for booking", "price": 150})
     room_id = response.json()["room_id"]
 
     response = await client.post("/bookings/create", json={
@@ -18,7 +20,8 @@ async def test_create_booking(client):
 
 @pytest.mark.asyncio
 async def test_list_bookings(client):
-    response = await client.post("/rooms/create", json={"description": "Room for list", "price": 120})
+    response = await client.post("/rooms/create", 
+                                 json={"description": "Room for list", "price": 120})
     room_id = response.json()["room_id"]
     await client.post("/bookings/create", json={
         "room_id": room_id,
@@ -35,7 +38,8 @@ async def test_list_bookings(client):
 
 @pytest.mark.asyncio
 async def test_delete_booking(client):
-    response = await client.post("/rooms/create", json={"description": "Room for delete booking", "price": 180})
+    response = await client.post("/rooms/create", 
+                                 json={"description": "Room for delete booking", "price": 180})
     room_id = response.json()["room_id"]
     response = await client.post("/bookings/create", json={
         "room_id": room_id,

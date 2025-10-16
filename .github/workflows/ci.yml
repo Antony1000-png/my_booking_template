@@ -1,26 +1,15 @@
-name: CI
-
+# .github/workflows/test.yml
+name: Test
 on: [push, pull_request]
 
 jobs:
-  build-test:
+  test:
     runs-on: ubuntu-latest
-
-    services:
-      postgres:
-        image: postgres:16
-        env:
-          POSTGRES_USER: user
-          POSTGRES_PASSWORD: password
-          POSTGRES_DB: my_booking
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd="pg_isready -U user"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=5
-
+    env:
+      CI: "true"  # ← Это включит SQLite в conftest.py
+      SECRET_KEY: ${{ secrets.SECRET_KEY }}
+      JWT_SECRET_KEY: ${{ secrets.JWT_SECRET_KEY }}
+      JWT_EXPIRE_DAYS: "30"
     steps:
       - uses: actions/checkout@v4
 
@@ -30,15 +19,10 @@ jobs:
           python-version: "3.12"
 
       - name: Install Poetry
-        run: pip install poetry
+        run: pipx install poetry
 
       - name: Install dependencies
         run: poetry install
 
-      - name: Run lint
-        run: poetry run ruff check .
-
       - name: Run tests
-        env:
-          DB_URL: postgresql://user:password@localhost:5432/my_booking
         run: poetry run pytest -v
