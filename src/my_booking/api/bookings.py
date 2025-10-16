@@ -1,14 +1,17 @@
+# src/my_booking/routers/bookings.py (или как у вас называется)
 from datetime import date
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, ValidationInfo, field_validator
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.my_booking.db import repository
-
-from ..dependencies import get_db
+from src.my_booking.db.models import Room  # ← ключевой импорт
+from src.my_booking.dependencies import get_db
 
 router = APIRouter(prefix="/bookings", tags=["bookings"])
+
 
 class BookingIn(BaseModel):
     room_id: int
@@ -22,30 +25,38 @@ class BookingIn(BaseModel):
             raise ValueError("End date must be after start date")
         return v
 
+
 @router.post("/create")
 async def create_booking(booking: BookingIn, db: AsyncSession = Depends(get_db)):
-    async with db:
-        booking_id = await repository.add_booking(
-            db,
-            booking.room_id,
-            booking.date_start,
-            booking.date_end,
-        )
-        return {"booking_id": booking_id}
+    # Проверка существования комнаты
+    result = await db.execute(select(Room).where(Room.id == booking.room_id))
+    if not result.scalar_one_or_none():
+        raise HTTPException(status_code=400, detail="Room does not exist")
+
+    # Создание бронирования
+    booking_id = await repository.add_booking(
+        db,
+        booking.room_id,
+        booking.date_start,
+        booking.date_end,
+    )
+    return {"booking_id": booking_id}
+
 
 @router.get("/list")
 async def list_bookings(room_id: int = Query(...), db: AsyncSession = Depends(get_db)):
-    async with db:
-        bookings = await repository.get_bookings(db, room_id)
-        return [
-            {"booking_id": b.id, 
-             "date_start": b.date_start.isoformat(), 
-             "date_end": b.date_end.isoformat()}
-            for b in bookings
-        ]
+    bookings = await repository.get_bookings(db, room_id)
+    return [
+        {
+            "booking_id": b.id,
+            "date_start": b.date_start.isoformat(),
+            "date_end": b.date_end.isoformat(),
+        }
+        for b in bookings
+    ]
+
 
 @router.delete("/delete/{booking_id}")
 async def delete_booking(booking_id: int, db: AsyncSession = Depends(get_db)):
-    async with db:
-        await repository.delete_booking(db, booking_id)
-        return {"deleted": booking_id}
+    await repository.delete_booking(db, booking_id)
+    return {"deleted": booking_id}

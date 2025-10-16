@@ -2,6 +2,7 @@
 # src/my_booking/config.py
 import os
 from typing import Optional
+
 from pydantic import ConfigDict, computed_field
 from pydantic_settings import BaseSettings
 
