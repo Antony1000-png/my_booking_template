@@ -7,10 +7,9 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 from sqlalchemy.pool import NullPool, StaticPool
 
 from src.my_booking.db.database import Base
-from src.my_booking.dependencies import get_db
+from src.my_booking.dependencies import close_db, get_db, init_db
 from src.my_booking.main import app
 
-# Определяем, в CI мы или нет
 IS_CI = os.getenv("CI", "false").lower() == "true"
 
 if IS_CI:
@@ -44,10 +43,16 @@ async def session(test_engine):
 
 @pytest.fixture()
 async def client(session):
+    # Инициализируем БД (вызываем lifespan вручную)
+    await init_db()
+
     async def override_get_db():
         yield session
 
     app.dependency_overrides[get_db] = override_get_db
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
         yield ac
+
+    # Очищаем зависимости и закрываем БД
     app.dependency_overrides.clear()
+    await close_db()
