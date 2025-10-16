@@ -2,8 +2,9 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
-from ..dependencies import get_db  # ← ИЗМЕНЕНО
+
 from ..db import repository
+from ..dependencies import get_db  # ← ИЗМЕНЕНО
 
 # ... остальной код без изменений
 
@@ -28,8 +29,8 @@ async def list_rooms(
     asc_desc = "asc" if asc else "desc"
     try:
         rooms = await repository.get_rooms(db, order_by=order_by, asc_desc=asc_desc)
-    except Exception:
-        raise HTTPException(status_code=400, detail="Invalid order_by field")
+    except Exception as err:
+        raise HTTPException(status_code=400, detail="Invalid order_by field") from err
     return [
         {
             "id": r.id,

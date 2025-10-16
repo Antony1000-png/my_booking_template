@@ -1,9 +1,12 @@
 # src/my_booking/main.py
 from contextlib import asynccontextmanager
+
 from fastapi import FastAPI, HTTPException
 from sqlalchemy.exc import IntegrityError
-from .dependencies import init_db, close_db
-from .api import rooms, bookings
+
+from .api import bookings, rooms
+from .dependencies import close_db, init_db
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):

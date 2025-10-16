@@ -1,9 +1,12 @@
-from fastapi import APIRouter, Depends, HTTPException, Query
-from pydantic import BaseModel, field_validator, ValidationInfo
 from datetime import date
+
+from fastapi import APIRouter, Depends, Query
+from pydantic import BaseModel, ValidationInfo, field_validator
 from sqlalchemy.ext.asyncio import AsyncSession
-from ..dependencies import get_db
+
 from src.my_booking.db import repository
+
+from ..dependencies import get_db
 
 router = APIRouter(prefix="/bookings", tags=["bookings"])
 
@@ -22,7 +25,12 @@ class BookingIn(BaseModel):
 @router.post("/create")
 async def create_booking(booking: BookingIn, db: AsyncSession = Depends(get_db)):
     async with db:
-        booking_id = await repository.add_booking(db, booking.room_id, booking.date_start, booking.date_end)
+        booking_id = await repository.add_booking(
+            db,
+            booking.room_id,
+            booking.date_start,
+            booking.date_end,
+        )
         return {"booking_id": booking_id}
 
 @router.get("/list")
@@ -30,7 +38,9 @@ async def list_bookings(room_id: int = Query(...), db: AsyncSession = Depends(ge
     async with db:
         bookings = await repository.get_bookings(db, room_id)
         return [
-            {"booking_id": b.id, "date_start": b.date_start.isoformat(), "date_end": b.date_end.isoformat()}
+            {"booking_id": b.id, 
+             "date_start": b.date_start.isoformat(), 
+             "date_end": b.date_end.isoformat()}
             for b in bookings
         ]
 

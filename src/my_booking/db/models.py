@@ -1,6 +1,8 @@
-from sqlalchemy import Column, Integer, String, Float, Date, TIMESTAMP, ForeignKey, func
+from sqlalchemy import TIMESTAMP, Column, Date, Float, ForeignKey, Integer, String, func
 from sqlalchemy.orm import relationship
+
 from .database import Base
+
 
 class Room(Base):
     __tablename__ = "rooms"

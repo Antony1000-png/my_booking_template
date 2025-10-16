@@ -1,7 +1,8 @@
 # src/my_booking/dependencies.py
 from sqlalchemy.ext.asyncio import AsyncSession
-from .db.database import create_engine, create_session_factory
+
 from .config import settings
+from .db.database import create_engine, create_session_factory
 
 # Глобальные переменные уровня приложения
 app_engine = None

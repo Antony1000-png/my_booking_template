@@ -1,6 +1,6 @@
 # src/my_booking/config.py
+from pydantic import ConfigDict, computed_field
 from pydantic_settings import BaseSettings
-from pydantic import computed_field, ConfigDict
 
 
 class Settings(BaseSettings):

@@ -1,11 +1,12 @@
 # tests/conftest.py
 import pytest
-from httpx import AsyncClient, ASGITransport
-from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
+from httpx import ASGITransport, AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.pool import NullPool
+
 from src.my_booking.db.database import Base
-from src.my_booking.main import app
 from src.my_booking.dependencies import get_db
+from src.my_booking.main import app
 
 # Используем тестовую БД
 TEST_DATABASE_URL = "postgresql+asyncpg://app:app1488@db:5432/hotel_db_test"
