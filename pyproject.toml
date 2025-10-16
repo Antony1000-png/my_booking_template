@@ -16,6 +16,7 @@ pydantic-settings = "^2.5.2"
 sqlalchemy = "^2.0.44"
 psycopg2-binary = "^2.9.11"
 greenlet = "^3.2.4"
+aiosqlite = "^0.21.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.3.2"
