@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 from sqlalchemy.pool import NullPool, StaticPool
 
 from src.my_booking.db.database import Base
-from src.my_booking.dependencies import close_db, get_db, init_db
+from src.my_booking.dependencies import close_db, get_db
 from src.my_booking.main import app
 
 IS_CI = os.getenv("CI", "false").lower() == "true"
@@ -58,7 +58,6 @@ async def session(test_engine):
 
 @pytest.fixture()
 async def client(session):
-    await init_db()
 
     async def override_get_db():
         yield session
@@ -68,4 +67,4 @@ async def client(session):
         yield ac
 
     app.dependency_overrides.clear()
-    await close_db()
+   
