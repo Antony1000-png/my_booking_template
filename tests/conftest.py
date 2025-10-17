@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 from sqlalchemy.pool import NullPool, StaticPool
 
 from src.my_booking.db.database import Base
-from src.my_booking.dependencies import close_db, get_db
+from src.my_booking.dependencies import get_db
 from src.my_booking.main import app
 
 IS_CI = os.getenv("CI", "false").lower() == "true"

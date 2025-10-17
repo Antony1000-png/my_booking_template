@@ -1,5 +1,6 @@
 # src/my_booking/dependencies.py
 import os
+
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 IS_TEST = os.getenv("TESTING", "false").lower() == "true"
