@@ -1,49 +1,47 @@
 # src/my_booking/main.py
-# src/my_booking/main.py
 from contextlib import asynccontextmanager
-
-from fastapi import FastAPI, HTTPException, Request
-from sqlalchemy.exc import IntegrityError
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from fastapi import FastAPI
+from sqlalchemy.ext.asyncio import create_async_engine
 from sqlalchemy.pool import NullPool
+import os
 
-from .api import bookings, rooms
-from .config import settings
 from .db.database import Base
+from .api import bookings, rooms# убедитесь, что роутеры импортированы
 
-# Глобальные переменные уровня приложения
-app_engine = None
-app_session_factory = None
+# Определяем URL БД
+IS_TEST = os.getenv("TESTING", "false").lower() == "true"
+if IS_TEST:
+    DATABASE_URL = "sqlite+aiosqlite:///:memory:"
+else:
+    DATABASE_URL = os.getenv(
+        "DATABASE_URL",
+        "postgresql+asyncpg://app:app1488@db:5432/hotel_db"
+    )
+
+# Создаём engine для lifespan (только для создания таблиц)
+engine = create_async_engine(
+    DATABASE_URL,
+    poolclass=NullPool if not IS_TEST else None,
+    echo=False,
+)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    global app_engine, app_session_factory
-    # Создаём движок без пула (для инициализации)
-    init_engine = create_async_engine(settings.database_url, poolclass=NullPool)
-    async with init_engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
-    await init_engine.dispose()
+    # Создаём таблицы при старте
+    if not IS_TEST:
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
+        print("✅ Таблицы созданы в PostgreSQL")
+    else:
+        print("ℹ️  Пропускаем создание таблиц — режим тестирования")
+    
+    yield  # приложение работает
 
-    # Создаём основной движок для работы приложения
-    app_engine = create_async_engine(settings.database_url, echo=True)
-    app_session_factory = async_sessionmaker(
-        app_engine, expire_on_commit=False, class_=AsyncSession
-    )
-    yield
-    await app_engine.dispose()
+    # Закрываем соединение при завершении
+    await engine.dispose()
 
 app = FastAPI(lifespan=lifespan)
 
-# Зависимость для роутов
-async def get_db() -> AsyncSession:
-    async with app_session_factory() as session:
-        yield session
-
+# Подключаем роутеры
 app.include_router(rooms.router)
 app.include_router(bookings.router)
-
-@app.exception_handler(IntegrityError)
-async def integrity_error_handler(request: Request, exc: IntegrityError):
-    if "foreign key constraint" in str(exc.orig):
-        raise HTTPException(status_code=400, detail="Room does not exist")
-    raise HTTPException(status_code=400, detail="Database integrity error")
