@@ -1,12 +1,13 @@
 # src/my_booking/main.py
+import os
 from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from sqlalchemy.ext.asyncio import create_async_engine
 from sqlalchemy.pool import NullPool
-import os
 
+from .api import bookings, rooms  # убедитесь, что роутеры импортированы
 from .db.database import Base
-from .api import bookings, rooms# убедитесь, что роутеры импортированы
 
 # Определяем URL БД
 IS_TEST = os.getenv("TESTING", "false").lower() == "true"
