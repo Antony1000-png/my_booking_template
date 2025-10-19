@@ -1,5 +1,5 @@
 import os
-import asyncio
+
 import asyncpg
 import pytest
 from httpx import ASGITransport, AsyncClient
@@ -51,7 +51,7 @@ async def _drop_database():
     conn = await asyncpg.connect(**CREATE_DB_PARAMS)
     try:
         # Завершаем все активные подключения к тестовой БД
-        await conn.execute(f"""
+        await conn.execute("""
             SELECT pg_terminate_backend(pid)
             FROM pg_stat_activity
             WHERE datname = $1 AND pid <> pg_backend_pid();
