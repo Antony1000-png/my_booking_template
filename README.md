@@ -6,5 +6,6 @@ Run:
 cp .env.example .env
 docker compose up --build
 ```
-
-API will be available at http://localhost:9000
+Запуск тестов, когда контейнер запущен:
+docker compose exec web pytest -v
+API will be available at http://localhost:8000
