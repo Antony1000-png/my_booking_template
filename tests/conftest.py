@@ -1,7 +1,6 @@
-# tests/conftest.py
-# conftest.py
 import os
-
+import asyncio
+import asyncpg
 import pytest
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy import event
@@ -16,8 +15,52 @@ IS_CI = os.getenv("CI", "false").lower() == "true"
 
 if IS_CI:
     TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
+    TEST_DB_NAME = None
+    CREATE_DB_PARAMS = None
 else:
-    TEST_DATABASE_URL = "postgresql+asyncpg://app:app1488@db:5432/hotel_db_test"
+    TEST_DB_NAME = "hotel_db_test"
+    TEST_DATABASE_URL = f"postgresql+asyncpg://app:app1488@db:5432/{TEST_DB_NAME}"
+    CREATE_DB_PARAMS = {
+        "user": "app",
+        "password": "app1488",
+        "host": "db",
+        "port": 5432,
+        "database": "postgres"
+    }
+
+
+async def _create_database_if_not_exists():
+    if IS_CI or not CREATE_DB_PARAMS:
+        return
+
+    conn = await asyncpg.connect(**CREATE_DB_PARAMS)
+    try:
+        exists = await conn.fetchval(
+            "SELECT 1 FROM pg_database WHERE datname = $1", TEST_DB_NAME
+        )
+        if not exists:
+            await conn.execute(f'CREATE DATABASE "{TEST_DB_NAME}";')
+    finally:
+        await conn.close()
+
+
+async def _drop_database():
+    if IS_CI or not CREATE_DB_PARAMS:
+        return
+
+    conn = await asyncpg.connect(**CREATE_DB_PARAMS)
+    try:
+        # Завершаем все активные подключения к тестовой БД
+        await conn.execute(f"""
+            SELECT pg_terminate_backend(pid)
+            FROM pg_stat_activity
+            WHERE datname = $1 AND pid <> pg_backend_pid();
+        """, TEST_DB_NAME)
+
+        # Удаляем базу
+        await conn.execute(f'DROP DATABASE IF EXISTS "{TEST_DB_NAME}";')
+    finally:
+        await conn.close()
 
 
 @pytest.fixture(scope="session")
@@ -27,13 +70,15 @@ def anyio_backend():
 
 @pytest.fixture(scope="session")
 async def test_engine():
+    await _create_database_if_not_exists()
+
     engine = create_async_engine(
         TEST_DATABASE_URL,
         poolclass=StaticPool if IS_CI else NullPool,
         echo=False,
     )
 
-    # Включаем foreign keys для SQLite в CI
+    # Включаем внешние ключи для SQLite в CI
     if IS_CI:
         @event.listens_for(engine.sync_engine, "connect")
         def set_sqlite_pragma(dbapi_connection, connection_record):
@@ -41,10 +86,17 @@ async def test_engine():
             cursor.execute("PRAGMA foreign_keys=ON")
             cursor.close()
 
+    # Создаём таблицы
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+
     yield engine
+
+    # Закрываем соединения перед удалением БД
     await engine.dispose()
+
+    # Удаляем тестовую БД (только локально)
+    await _drop_database()
 
 
 @pytest.fixture()
@@ -58,7 +110,6 @@ async def session(test_engine):
 
 @pytest.fixture()
 async def client(session):
-
     async def override_get_db():
         yield session
 
@@ -67,4 +118,3 @@ async def client(session):
         yield ac
 
     app.dependency_overrides.clear()
-   
