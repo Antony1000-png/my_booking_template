@@ -19,7 +19,6 @@ format:
 	poetry run ruff check . --fix
 
 test:
-	poetry run pytest -v
-
+	set -a; source .env.test.local; set +a; poetry run pytest
 precommit:
 	pre-commit install
