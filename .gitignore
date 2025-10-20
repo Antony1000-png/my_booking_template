@@ -48,6 +48,7 @@ pgdata/
 .env.prod
 .env.test
 .env.docker
+.env.test.local
 !.env.example
 
 # Distribution / Packaging

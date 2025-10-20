@@ -11,6 +11,7 @@ from src.my_booking.db.database import Base
 from src.my_booking.dependencies import get_db
 from src.my_booking.main import app
 
+# Определяем, запущено ли в CI
 IS_CI = os.getenv("CI", "false").lower() == "true"
 
 if IS_CI:
@@ -18,17 +19,23 @@ if IS_CI:
     TEST_DB_NAME = None
     CREATE_DB_PARAMS = None
 else:
-    TEST_DB_NAME = "hotel_db_test"
-    TEST_DATABASE_URL = f"postgresql+asyncpg://app:app1488@db:5432/{TEST_DB_NAME}"
+    DB_USER = os.getenv("DB_USER", "app")
+    DB_PASSWORD = os.getenv("DB_PASSWORD", "app1488")
+    DB_HOST = os.getenv("DB_HOST", "db")
+    DB_PORT = os.getenv("DB_PORT", "5432")
+    TEST_DB_NAME = os.getenv("TEST_DB_NAME", "hotel_db_test")
+
+    TEST_DATABASE_URL = f"postgresql+asyncpg://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{TEST_DB_NAME}"
     CREATE_DB_PARAMS = {
-        "user": "app",
-        "password": "app1488",
-        "host": "db",
-        "port": 5432,
-        "database": "postgres"
+        "user": DB_USER,
+        "password": DB_PASSWORD,
+        "host": DB_HOST,
+        "port": int(DB_PORT),
+        "database": "postgres",
     }
 
-
+# ... остальной код без изменений (вспомогательные функции и фикстуры)
+# --- Вспомогательные функции для управления тестовой БД ---
 async def _create_database_if_not_exists():
     if IS_CI or not CREATE_DB_PARAMS:
         return
@@ -50,19 +57,17 @@ async def _drop_database():
 
     conn = await asyncpg.connect(**CREATE_DB_PARAMS)
     try:
-        # Завершаем все активные подключения к тестовой БД
         await conn.execute("""
             SELECT pg_terminate_backend(pid)
             FROM pg_stat_activity
             WHERE datname = $1 AND pid <> pg_backend_pid();
         """, TEST_DB_NAME)
-
-        # Удаляем базу
         await conn.execute(f'DROP DATABASE IF EXISTS "{TEST_DB_NAME}";')
     finally:
         await conn.close()
 
 
+# --- Фикстуры pytest ---
 @pytest.fixture(scope="session")
 def anyio_backend():
     return "asyncio"
@@ -92,10 +97,8 @@ async def test_engine():
 
     yield engine
 
-    # Закрываем соединения перед удалением БД
+    # Очистка
     await engine.dispose()
-
-    # Удаляем тестовую БД (только локально)
     await _drop_database()
 
 
